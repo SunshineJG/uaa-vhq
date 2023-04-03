@@ -22,8 +22,6 @@ function Register() {
 
   const navigate = useNavigate();
 
-  console.log(`This is from Register outside onSubmit of auth.currentUser: ${auth.currentUser}`);
-
   // choose this or useAuthStatus 
   // useEffect(() => {
   //   onAuthStateChanged(auth, (user) => {
@@ -56,10 +54,12 @@ function Register() {
             displayName: name,
           });
           
+
+
           const userData = {
             ...formData,
-            organisation: [],
-            avatar: '',
+            organisation: null,
+            avatar: null,
             timestamp: serverTimestamp()
           };
 

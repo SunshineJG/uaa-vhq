@@ -395,9 +395,45 @@ footer {
 }
 
 .profileNameActive {
-  background-color: rgba(44, 44, 44, 0.1);
+  background-color: #c7f5de;
 }
 
+
+.formInputFile,
+.formInputFileActive {
+  padding: 0.9rem 3rem;
+  background-color: #ffffff;
+  font-weight: 600;
+  border-radius: 1rem;
+  font-size: 1rem;
+  margin: 0.5rem 0.5rem 0 0;
+  display: flex;
+  text-align: center;
+}
+.formInputFile,
+.formInputFileActive {
+  width: 100%;
+}
+.formInputFile::-webkit-file-upload-button,
+.formInputFileActive::-webkit-file-upload-button {
+  background-color: #c1cbc6;
+  border: none;
+  color: #ffffff;
+  font-weight: 600;
+  padding: 0.5rem 0.75rem;
+  border-radius: 1rem;
+  margin-right: 1rem;
+}
+.formInputFileActive::-webkit-file-upload-button {
+  background-color: #c7f5de;
+}
+
+.avatarDisplay {
+  width: 80px;
+  height: 80px;
+  border-radius: 1rem;
+  object-fit: cover;
+}
 
 @keyframes spin {
   0% {

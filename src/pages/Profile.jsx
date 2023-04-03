@@ -9,10 +9,13 @@ import {
   query,
   where,
   orderBy,
-  deleteDoc
+  deleteDoc,
+  documentId,
+  getDoc
 } from 'firebase/firestore'
 import { getAuth, onAuthStateChanged, getIdTokenResult, updateProfile } from 'firebase/auth'
 import { httpsCallable } from 'firebase/functions'
+import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage'
 // import { useAuthStatus } from '../hooks/useAuthStatus'
 import { toast } from 'react-toastify'
 import Spinner from '../components/Spinner'
@@ -27,9 +30,10 @@ function Profile() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    avatar: '',
-    orgs: []
-  })
+    avatar: null,
+    organisation: null
+  });
+  const [avatarUrl, setAvatarUrl] = useState('');
   const [loggedIn, setLoggedIn] = useState(false);
   const [updateClick, setUpdateClick] = useState(false);
 
@@ -42,34 +46,44 @@ function Profile() {
     onAuthStateChanged(auth, (user) => {
       if(user) {
         setUser(user);
-        setFormData((prevState) => ({
-          ...prevState,
-          name: user.displayName,
-          email: user.email
-        }));
+        user.getIdTokenResult().then(idTokenResult => {
+          if(idTokenResult.claims.admin) {
+            setIsAdmin(true);
+          };
+        });
+        console.log(`user displayName: ${user.displayName}`);
+
+        const fetchUserProfile = async (user) => {
+          // get document ref
+          const userRef = doc(db, 'users', user.uid);
+          // get document data
+          const userSnap = await getDoc(userRef);
+          if(userSnap.exists) {
+            console.log(`user profile: ${userSnap.data()}`);
+            setFormData((prevState) => ({
+              ...prevState,
+              name: userSnap.data().name,
+              email: userSnap.data().email,
+              // avatar: userSnap.data().avatar,
+              organisation: userSnap.data().organisation
+            }));
+            setAvatarUrl(userSnap.data().avatar);
+            console.log(`db avatarUrl: ${avatarUrl}`);
+          } else {
+            console.log('No such user!');
+          }          
+        }
+
+        fetchUserProfile(user);
+
         setLoggedIn(true);
         setLoading(false);
+      } else {
+        <Spinner />;
       }
     });
-  }, [auth]);
+  }, [auth, avatarUrl]);
 
-  console.log(`1 Profile user: ${user}`);
-
-  useEffect(() => {
-    if(user) { // check user is not null before calling getIdTokenResult
-      user.getIdTokenResult().then(idTokenResult => {
-        if(idTokenResult.claims.admin) {
-          setIsAdmin(true);
-        };
-        console.log(`2 user details: ${user.displayName}`);
-        // setUserData((prevState) => ({
-        //   ...prevState,
-        //   user.
-        // }))
-      });
-    }
-  }, [user]); // call the effect only when user changes
-  
 
   const adminOnChange = (e) => setAdminEmail(e.target.value);
 
@@ -95,25 +109,89 @@ function Profile() {
 
 
   const formOnChange = (e) => {
-    setFormData((prevState) => ({
-      ...prevState,
-      [e.target.id]: e.target.value
-    }))
+    if(e.target.files) {
+      console.log(`Step 1: onChange got image: ${e.target.files}`);
+      setFormData((prevState) => ({
+        ...prevState,
+        avatar: e.target.files[0]
+      }))
+    } else {
+      setFormData((prevState) => ({
+        ...prevState,
+        [e.target.id]: e.target.value
+      }));
+    }  
   }
 
   const formOnSubmit = async (e) => {
     try {
+      // update name if changed
       if(auth.currentUser.displayName !== name) {
-        updateProfile(auth.currentUser, {
+        await updateProfile(auth.currentUser, {
           displayName: name,
         });
+      }
 
-        // update in firestore
-        const userRef = doc(db, 'users', auth.currentUser.uid);
+      // update avatar
+      // avatars store in firebase storage
+      // store one image
+      const storeImage = async (image) => {
+        return new Promise((resolve, reject) => {
+          const storage = getStorage();
+          const fileName = `avatar-${auth.currentUser.uid}`;
+          const userAvatarRef = ref(storage, 'userAvatars/'+ fileName);
+          const uploadTask = uploadBytesResumable(userAvatarRef, image);
+
+          uploadTask.on(
+            'state_changed', 
+            (snapshot) => {
+              const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100
+              console.log('Upload is ' + progress + '% done');
+              switch (snapshot.state) {
+                case 'paused':
+                  console.log('Upload is paused')
+                  break;
+                case 'running':
+                  console.log('Upload is running')
+                  break;
+              }
+            }, 
+            (error) => {
+              reject(error);
+            }, 
+            () => {
+              getDownloadURL(uploadTask.snapshot.ref)
+                .then((downloadURL) => {
+                    resolve(downloadURL);
+                })
+            }
+          );
+          })              
+      }
+
+      const imageUrl = await storeImage(avatar)
+      .catch(() => {
+        setLoading(false);
+        toast.error('Image not uploaded', {hideProgressBar: true, autoClose: 3000});
+        return;
+      });
+      console.log(`avatarUrl in store: ${imageUrl}`);
+      setAvatarUrl(imageUrl);
+
+      // update in firestore
+      const userRef = doc(db, 'users', auth.currentUser.uid);
+      try {
         await updateDoc(userRef, {
           name,
+          avatar: imageUrl,
         });
+        console.log(`storage avatar updated: ${avatar}`);
+      } catch (error) {
+        console.log(error);
       }
+      
+
+
     } catch (error) {
       console.log(`update user info error: ${error}`);
       toast.error('Could not update user profile', {hideProgressBar: true, autoClose: 3000});
@@ -131,6 +209,18 @@ function Profile() {
             <section className='form'>                   
               <form>
                 <div className="form-group">
+                  {avatarUrl && <img src={avatarUrl} alt={name} className='avatarDisplay'/>}
+                  <label>Upload an Avatar</label>
+                  <input 
+                    type='file'
+                    id='avatar'
+                    accept='.jpg, .png, .jpeg'
+                    onChange={formOnChange}
+                    disabled={!updateClick}
+                    className={!updateClick ? 'formInputFile' : 'formInputFileActive'}
+                  />                                    
+                </div>
+                <div className="form-group">
                   <label htmlFor="name">Username</label>
                   <input 
                     type="text"
@@ -147,7 +237,6 @@ function Profile() {
                     type="email"
                     id='email'
                     value={email}
-                    onChange={formOnChange}
                     disabled
                     className='form-control profileName'
                   />
@@ -161,9 +250,12 @@ function Profile() {
                 setUpdateClick((prevState) => !prevState)
                 }} 
                 className='btn btn-reverse' 
-                style={{width: '30%'}}>
-                {updateClick ? 'done' : 'update'}
+                style={{width: '50%'}}>
+                {updateClick ? 'Done' : 'Edit Personal Info'}
               </div>
+
+              
+
             </section>
             { isAdmin && (
               <section className='form'>
