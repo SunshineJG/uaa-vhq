@@ -49,7 +49,7 @@ function Register() {
     } else {
         try {
           const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-          console.log(`This is from Register of userCredential: ${userCredential}`);
+          console.log(`Register of userCredential: ${userCredential}`);
           const user = userCredential.user;
 
           updateProfile(auth.currentUser, {

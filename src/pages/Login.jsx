@@ -8,7 +8,7 @@ import { useAuthStatus } from '../hooks/useAuthStatus'
 
 function Login() {
   const { loggedIn } = useAuthStatus();
-  
+
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -30,7 +30,7 @@ function Login() {
 
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      console.log(userCredential);
+      console.log(`Login userCredential: ${userCredential}`);
       
       if(userCredential.user) {
         navigate('/profile');

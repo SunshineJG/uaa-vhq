@@ -377,6 +377,28 @@ footer {
   animation: spin 1.2s linear infinite;
 }
 
+
+.profileCard {
+  background-color: #ffffff;
+  border-radius: 1rem;
+  padding: 1rem;
+  box-shadow: rgba(0, 0, 0, 0.2);
+  max-width: 500px;
+}
+
+
+.profileName,
+.profileNameActive {
+  margin: 0.3rem 0;
+  font-weight: 600;
+  width: 100%;
+}
+
+.profileNameActive {
+  background-color: rgba(44, 44, 44, 0.1);
+}
+
+
 @keyframes spin {
   0% {
     transform: rotate(0deg);
@@ -403,4 +425,5 @@ footer {
   .heading p {
     font-size: 1.5rem;
   }
+
 }

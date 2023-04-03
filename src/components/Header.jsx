@@ -20,7 +20,7 @@ function Header() {
   }, []);
 
 
-  console.log(`This is from Header login status: ${loggedIn}`);
+  console.log(`Header login status: ${loggedIn}`);
 
   const onLogout = () => {
     setLoggedIn(false);
