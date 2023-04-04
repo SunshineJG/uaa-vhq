@@ -435,6 +435,15 @@ footer {
   object-fit: cover;
 }
 
+.usersListing {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  position: relative;
+}
+
+
 @keyframes spin {
   0% {
     transform: rotate(0deg);

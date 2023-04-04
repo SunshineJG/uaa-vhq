@@ -54,8 +54,6 @@ function Register() {
             displayName: name,
           });
           
-
-
           const userData = {
             ...formData,
             organisation: '',
@@ -67,7 +65,7 @@ function Register() {
 
           await setDoc(doc(db, 'users', user.uid), userData);
 
-          navigate('/profile');
+          navigate(`/profile/${user.uid}`);
         } catch (error) {
           console.log(error);
           toast.error('Something went wrong with registeration.', {hideProgressBar: true, autoClose: 3000});

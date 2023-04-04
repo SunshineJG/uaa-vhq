@@ -33,7 +33,7 @@ function Login() {
       console.log(`Login userCredential: ${userCredential}`);
       
       if(userCredential.user) {
-        navigate('/profile');
+        navigate(`/profile/${userCredential.user.uid}`);
       }
     } catch (error) {
       toast.error('Bad user credentials', {hideProgressBar: true, autoClose: 3000});

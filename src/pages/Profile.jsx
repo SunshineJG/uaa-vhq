@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { db, functions } from '../firebase.config'
 import { 
   updateDoc,
@@ -18,6 +17,7 @@ import { httpsCallable } from 'firebase/functions'
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage'
 // import { useAuthStatus } from '../hooks/useAuthStatus'
 import { toast } from 'react-toastify'
+import ListingUser from '../components/ListingUser'
 import Spinner from '../components/Spinner'
 
 
@@ -27,6 +27,9 @@ function Profile() {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [newImage, setNewImage] = useState(false);
+  const [usersExist, setUsersExist] = useState(false);
+  const [searchUser, setSearchUser] = useState('');
+  const [usersListing, setUsersListing] = useState([]);
   const [user, setUser] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
@@ -86,6 +89,8 @@ function Profile() {
   }, [auth, avatarUrl]);
 
 
+
+  // for making admin
   const adminOnChange = (e) => setAdminEmail(e.target.value);
 
   const adminOnSubmit = (e) => {
@@ -105,10 +110,10 @@ function Profile() {
     });
 
     setAdminEmail('');
+  };
 
-  }
 
-
+  // for profile update
   const formOnChange = (e) => {
     if(e.target.files) {
       console.log(`what is in the file upload field: ${e.target.files} and value: ${e.target.value}`);
@@ -127,8 +132,9 @@ function Profile() {
         ...prevState,
         [e.target.id]: e.target.value
       }));
-    }  
-  }
+    };
+
+  };
 
   const formOnSubmit = async () => {
     try {
@@ -137,7 +143,7 @@ function Profile() {
         await updateProfile(auth.currentUser, {
           displayName: name,
         });
-      }
+      };
 
       // update avatar
       // avatars store in firebase storage
@@ -192,7 +198,7 @@ function Profile() {
           });
         } catch (error) {
           console.log(error);
-        }
+        };
 
         console.log(`avatarUrl in store: ${imageUrl}`);
         setAvatarUrl(imageUrl);
@@ -212,9 +218,89 @@ function Profile() {
     } catch (error) {
       console.log(`update user info error: ${error}`);
       toast.error('Could not update user profile', {hideProgressBar: true, autoClose: 3000});
+    }  
+  };
+
+
+    //List all users in users
+    const showUsers = async () => {     
+      try {
+        setLoading(true);
+        const usersRef = collection(db, 'users');
+        const usersArray = [];
+        const usersSnapshot = await getDocs(usersRef);
+        console.log(`what is the userSnapshot: ${usersSnapshot}`);
+        if(usersSnapshot) {
+          usersSnapshot.forEach((doc) => {
+            return usersArray.push({
+              id: doc.id,
+              data: doc.data()
+            });
+          });
+
+          setUsersExist(true);
+        }
+
+        setUsersListing(usersArray);
+        console.log(usersListing);
+        setLoading(false);
+      } catch (error) {
+        console.log(`Listing all users error: ${error}`);
+      }  
     }
+  
+
+
+
+  // for user search
+  // const searchUserOnChange = async (e) => { 
+  //   setSearchUser(e.target.value);
+
+  //   try {
+
+  //     console.log(`search input: ${e.target.value}`);
+  //     // get collection reference
+  //     const usersRef = collection(db, 'users');
+  //     console.log(`usersRef got? : ${usersRef}`);
+  //     // create a query
+  //     const q = query(
+  //       usersRef,
+  //       where('name', '==', e.target.value),
+  //       orderBy('timestamp', 'desc')
+  //     );
+
+  //     let users = [];
+  //     // execute query
+  //     const querySnap = await getDocs(q);
+  //     if(querySnap) {
+  //       querySnap.forEach((doc) => {
+  //         return users.push({
+  //           id: doc.id,
+  //           data: doc.data()
+  //         });
+  //       });
+  //     };
+      
+  //     setUsersListing(users);
+  //     setLoading(false);   
+  //   } catch (error) {
+  //     console.log(`getting user list error: ${error}`);
+  //   };
     
-  }
+  // };
+
+  // const searchUserOnSubmit = () => {
+
+  // };
+
+  const onDisable = (userId) => { 
+    if (window.confirm('Are you sure you want to delete?')) {
+      toast.success(`${userId} locked`, {hideProgressBar: true, autoClose: 3000})
+    }; 
+  };
+
+
+
 
   if(loading) { return <Spinner />};
   
@@ -270,10 +356,43 @@ function Profile() {
                 style={{width: '50%'}}>
                 {updateClick ? 'Done' : 'Edit Personal Info'}
               </div>
-
-              
-
             </section>
+
+            { isAdmin && (
+              <section className='form'>
+                <p style={{paddingTop: '30px', paddingBottom: '10px', textAlign: 'left', fontWeight: 'bold'}}>User Management</p> 
+                <form>
+                  <div className='form-group'>
+                  <label htmlFor="searchUser">Search Users by Name</label>
+                    <input 
+                      type='text'
+                      id='searchUser'
+                      // value={searchUser}
+                      className='form-control'
+                      // onChange={searchUserOnChange}
+                    />
+                  </div>
+                </form>
+
+                <button className='btn btn-block' onClick={showUsers}>List all users</button>
+
+                {usersExist && (
+                  <div>
+                    <ul>
+                      {usersListing.map((userItem) => (
+                        <ListingUser 
+                          userData={userItem.data} 
+                          id={userItem.id} 
+                          key={userItem.id} 
+                          onDisable={() => onDisable(userItem.id)}
+                        />
+                      ))}
+                    </ul>
+                  </div>)                 
+                }       
+              </section>
+            )} 
+
             { isAdmin && (
               <section className='form'>
                 <p style={{paddingTop: '30px', paddingBottom: '10px', textAlign: 'left', fontWeight: 'bold'}}>Enable Admin</p>
