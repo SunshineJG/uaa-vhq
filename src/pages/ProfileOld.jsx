@@ -26,7 +26,6 @@ function Profile() {
   const [adminEmail, setAdminEmail] = useState('');
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [newImage, setNewImage] = useState(false);
   const [user, setUser] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
@@ -34,6 +33,7 @@ function Profile() {
     avatar: '',
     organisation: ''
   });
+  const [fileChose, setFileChose] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState('');
   const [loggedIn, setLoggedIn] = useState(false);
   const [updateClick, setUpdateClick] = useState(false);
@@ -57,9 +57,11 @@ function Profile() {
         const fetchUserProfile = async (user) => {
           // get document ref
           const userRef = doc(db, 'users', user.uid);
+          setLoading(true);
           // get document data
           const userSnap = await getDoc(userRef);
           if(userSnap.exists) {
+            setLoading(false);
             console.log(`user profile: ${userSnap.data()}`);
             setFormData((prevState) => ({
               ...prevState,
@@ -68,11 +70,11 @@ function Profile() {
               // avatar: userSnap.data().avatar,
               organisation: userSnap.data().organisation
             }));
+            console.log(`Before update avatar in user db: ${userSnap.data().avatar}`);
+            console.log(`Before update name in user db: ${userSnap.data().name}`);
             setAvatarUrl(userSnap.data().avatar);
-            console.log(`start db avatarUrl: ${avatarUrl}`);
-          } else {
-            console.log('No such user!');
-          }          
+            console.log(`Before update get avatarUrl from user db: ${avatarUrl}`);
+          }        
         }
 
         fetchUserProfile(user);
@@ -83,7 +85,7 @@ function Profile() {
         <Spinner />;
       }
     });
-  }, [auth, avatarUrl]);
+  }, [auth]);
 
 
   const adminOnChange = (e) => setAdminEmail(e.target.value);
@@ -110,27 +112,35 @@ function Profile() {
 
 
   const formOnChange = (e) => {
+    let boolean = null;
+
     if(e.target.files) {
-      console.log(`what is in the file upload field: ${e.target.files} and value: ${e.target.value}`);
-      if(e.target.files !== undefined && e.target.value !== '') {
-        console.log(`Step 1: onChange got image: ${e.target.files}`);
-        setNewImage(true);
+      console.log(`Step 1: onChange got image: ${e.target.files[0]}`);
+      if(e.target.files[0] !== undefined) {
+        console.log(`Step 2: onChange got image: ${e.target.files[0]}`);
+        setFileChose(true);
         setFormData((prevState) => ({
           ...prevState,
           avatar: e.target.files[0]
         }));
+        console.log(`chosed file in formData now: ${formData.avatar}`);
       } else {
-        setNewImage(false);
+        setFileChose(false);
       }      
-    } else {
+    };
+
+    if(!e.target.files) {
       setFormData((prevState) => ({
         ...prevState,
-        [e.target.id]: e.target.value
+        [e.target.id]: boolean ?? e.target.value
       }));
-    }  
+      console.log(`new name in formData now: ${formData.name}`);
+    };
   }
 
-  const formOnSubmit = async () => {
+  const formOnSubmit = async (e) => {
+    setLoading(true);
+
     try {
       // update name if changed
       if(auth.currentUser.displayName !== name) {
@@ -173,40 +183,44 @@ function Profile() {
                 })
             }
           );
-        });           
-      };
+          })              
+      }
 
-      if(newImage) {
+
+      if(fileChose) {
         const imageUrl = await storeImage(avatar)
         .catch(() => {
           setLoading(false);
           toast.error('Image not uploaded', {hideProgressBar: true, autoClose: 3000});
           return;
         });
-
-        // update avatar in firebase db
-        const userRef = doc(db, 'users', auth.currentUser.uid);
-        try {
-          await updateDoc(userRef, {
-            avatar: imageUrl,
-          });
-        } catch (error) {
-          console.log(error);
-        }
-
-        console.log(`avatarUrl in store: ${imageUrl}`);
+        console.log(`storage image: ${imageUrl}`);
         setAvatarUrl(imageUrl);
-      }; 
+        console.log(`avatarUrl get from storage: ${imageUrl}`);
+      }
       
 
-      // update name in firestore
+      // update in firestore
       const userRef = doc(db, 'users', auth.currentUser.uid);
       try {
+        setLoading(true);
         await updateDoc(userRef, {
           name,
-        });
+          avatar: avatarUrl,
+        });    
       } catch (error) {
-        console.log(error);
+        console.log(`error when updating users db: ${error}`);
+      }
+      
+      try {
+        const userSnap = await getDoc(userRef);
+        if(userSnap.exists) {
+          console.log(`getDoc after updateDoc, name after edit in users db: ${userSnap.data().name}`);
+          setLoading(false);
+          console.log(`avatar after edit in user db: ${userSnap.data().avatar}`);     
+        }
+      } catch (error) {
+        console.log(`updating user db after edit failed: ${error}`);
       }
 
     } catch (error) {
@@ -226,12 +240,14 @@ function Profile() {
             <section className='form'>                   
               <form>
                 <div className="form-group">
+                  {avatarUrl !== '' && console.log(`div avatarUrl: ${avatarUrl}`) }
                   {avatarUrl !== '' && <img src={avatarUrl} alt={name} className='avatarDisplay'/>}
                   <label>Upload an Avatar</label>
                   <input 
                     type='file'
                     id='avatar'
                     accept='.jpg, .png, .jpeg'
+                    max='1'
                     onChange={formOnChange}
                     disabled={!updateClick}
                     className={!updateClick ? 'formInputFile' : 'formInputFileActive'}

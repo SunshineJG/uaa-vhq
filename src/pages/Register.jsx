@@ -58,8 +58,8 @@ function Register() {
 
           const userData = {
             ...formData,
-            organisation: null,
-            avatar: null,
+            organisation: '',
+            avatar: '',
             timestamp: serverTimestamp()
           };
 
