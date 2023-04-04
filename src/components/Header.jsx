@@ -9,12 +9,21 @@ import { onAuthStateChanged } from 'firebase/auth'
 function Header() {
   // const { loggedIn, checkingStatus } = useAuthStatus();
   const [loggedIn, setLoggedIn] = useState(false);
+  const [userProfileUrl, setUserProfileUrl] = useState('');
   const navigate = useNavigate();
+
+
 
   useEffect(() => {
     onAuthStateChanged(auth, (user) => {
       if(user) {
         setLoggedIn(true);
+        console.log(`header user ${user.uid}`);
+        const params = new URLSearchParams({
+          q: user.uid
+        });
+        setUserProfileUrl(`/profile/${params}`);
+        console.log(`url realdy: ${userProfileUrl}`);
       }
     })
   }, []);
@@ -44,7 +53,7 @@ function Header() {
               </Link>
             </li>
             <li>
-              <Link to='/profile'>
+              <Link to={userProfileUrl}>
                 <FaUser />Profile
               </Link>
             </li>

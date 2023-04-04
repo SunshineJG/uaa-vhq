@@ -252,46 +252,47 @@ function Profile() {
 
 
 
-  // for user search
-  // const searchUserOnChange = async (e) => { 
-  //   setSearchUser(e.target.value);
+    //user search
+    const searchUserOnChange = async (e) => { 
+      setSearchUser(e.target.value);
 
-  //   try {
+      try {
 
-  //     console.log(`search input: ${e.target.value}`);
-  //     // get collection reference
-  //     const usersRef = collection(db, 'users');
-  //     console.log(`usersRef got? : ${usersRef}`);
-  //     // create a query
-  //     const q = query(
-  //       usersRef,
-  //       where('name', '==', e.target.value),
-  //       orderBy('timestamp', 'desc')
-  //     );
+        console.log(`search input: ${e.target.value}`);
+        // get collection reference
+        const usersRef = collection(db, 'users');
+        console.log(`usersRef got? : ${usersRef}`);
+        // create a query
+        const q = query(
+          usersRef,
+          where('name', '==', e.target.value),
+          orderBy('timestamp', 'desc')
+        );
 
-  //     let users = [];
-  //     // execute query
-  //     const querySnap = await getDocs(q);
-  //     if(querySnap) {
-  //       querySnap.forEach((doc) => {
-  //         return users.push({
-  //           id: doc.id,
-  //           data: doc.data()
-  //         });
-  //       });
-  //     };
+        let users = [];
+        // execute query
+        const querySnap = await getDocs(q);
+        if(querySnap) {
+          querySnap.forEach((doc) => {
+            return users.push({
+              id: doc.id,
+              data: doc.data()
+            });
+          });
+        };
+        
+        setUsersListing(users);
+        setLoading(false);   
+      } catch (error) {
+        console.log(`getting user list error: ${error}`);
+      };
       
-  //     setUsersListing(users);
-  //     setLoading(false);   
-  //   } catch (error) {
-  //     console.log(`getting user list error: ${error}`);
-  //   };
-    
-  // };
+    };
 
-  // const searchUserOnSubmit = () => {
+    // const searchUserOnSubmit = () => {
 
-  // };
+    // };
+
 
   const onDisable = (userId) => { 
     if (window.confirm('Are you sure you want to delete?')) {
@@ -369,7 +370,7 @@ function Profile() {
                       id='searchUser'
                       // value={searchUser}
                       className='form-control'
-                      // onChange={searchUserOnChange}
+                      onChange={searchUserOnChange}
                     />
                   </div>
                 </form>
