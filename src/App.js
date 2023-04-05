@@ -6,7 +6,9 @@ import Register from './pages/Register'
 import Login from './pages/Login'
 import Profile from './pages/Profile'
 import ForgotPassword from './pages/ForgotPassword'
+import Orgnisation from './pages/Orgnisation'
 import Header from './components/Header'
+
 
 function App() {
   return <>
@@ -20,6 +22,8 @@ function App() {
           <Route path='/login' element={<Login />} />
           <Route path='/profile/:userId' element={<Profile />} />
           <Route path='/forgot-password' element={<ForgotPassword />} />
+          <Route path='/orgs' element={<Orgnisation />} />
+          <Route path='/orgs/:orgId' element={<Orgnisation />} />
         </Routes>
       </div>
     </Router>

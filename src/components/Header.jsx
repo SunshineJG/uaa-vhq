@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { FaSignInAlt, FaSignOutAlt, FaUser, FaHome, FaUserPlus } from 'react-icons/fa'
+import { FaSignInAlt, FaSignOutAlt, FaUser, FaHome, FaUserPlus, FaBuilding } from 'react-icons/fa'
 import { Link, useNavigate } from 'react-router-dom'
 import { auth } from '../firebase.config'
 import vhq_logo from '../assets/jpg/vhq_logo.jpg'
@@ -26,7 +26,7 @@ function Header() {
         console.log(`url realdy: ${userProfileUrl}`);
       }
     })
-  }, []);
+  }, [userProfileUrl]);
 
 
   console.log(`Header login status: ${loggedIn}`);
@@ -50,6 +50,11 @@ function Header() {
             <li>
               <Link to='/'>
                 <FaHome />Home
+              </Link>
+            </li>
+            <li>
+              <Link to='/orgs'>
+                <FaBuilding />Orgnisation
               </Link>
             </li>
             <li>

@@ -10,6 +10,7 @@ import {
   orderBy,
   deleteDoc,
   documentId,
+  addDoc,
   getDoc
 } from 'firebase/firestore'
 import { getAuth, onAuthStateChanged, getIdTokenResult, updateProfile } from 'firebase/auth'
@@ -18,6 +19,7 @@ import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/
 // import { useAuthStatus } from '../hooks/useAuthStatus'
 import { toast } from 'react-toastify'
 import ListingUser from '../components/ListingUser'
+import ListingOrg from '../components/ListingOrg'
 import Spinner from '../components/Spinner'
 
 
@@ -32,6 +34,13 @@ function Profile() {
   const [clearUserSearchResult, setClearUserSearchResult] = useState(false);
   const [usersListing, setUsersListing] = useState([]);
   const [clearUsersListing, setClearUsersListing] = useState(false);
+
+  const [searchOrgInput, setSearchOrgInput] = useState('');
+  const [orgSearchResult, setOrgSearchResult] = useState([]);
+  const [clearOrgSearchResult, setClearOrgSearchResult] = useState(false);
+  const [orgsListing, setOrgsListing] = useState([]);
+  const [clearOrgsListing, setClearOrgsListing] = useState(false);
+
   const [user, setUser] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
@@ -42,8 +51,18 @@ function Profile() {
   const [avatarUrl, setAvatarUrl] = useState('');
   const [loggedIn, setLoggedIn] = useState(false);
   const [updateClick, setUpdateClick] = useState(false);
+  const [orgFormData, setOrgFormData] = useState({
+    orgName: '',
+    orgCreator: '',
+    orgAdmin: [],
+    orgLogo: '',
+    members: [],
+    devices: []
+  });
+  const [orgAdmins, setOrgAdmins] = useState('');
 
   const { name, email, avatar, organisation } = formData;
+  const { orgName } = orgFormData;
   // const {loggedIn} = useAuthStatus();
   // const user = auth.currentUser;
 
@@ -116,7 +135,7 @@ function Profile() {
 
 
   // Profile update
-  const formOnChange = (e) => {
+  const profileFormOnChange = (e) => {
     if(e.target.files) {
       console.log(`what is in the file upload field: ${e.target.files} and value: ${e.target.value}`);
       if(e.target.files !== undefined && e.target.value !== '') {
@@ -138,7 +157,7 @@ function Profile() {
 
   };
 
-  const formOnSubmit = async () => {
+  const profileFormOnSubmit = async () => {
     try {
       // update name if changed
       if(auth.currentUser.displayName !== name) {
@@ -250,7 +269,7 @@ function Profile() {
               data: doc.data()
             });
           });
-        }
+        };
 
         setUsersListing(usersArray);
         setClearUsersListing(true);
@@ -258,7 +277,7 @@ function Profile() {
         setLoading(false);
       } catch (error) {
         console.log(`Listing all users error: ${error}`);
-      }  
+      } 
     }
   
 
@@ -270,10 +289,9 @@ function Profile() {
       console.log(`get search input: ${searchUserInput}`);
     }
 
+
     const searchUserOnSubmit = async (e) => {
       e.preventDefault();
-
-
       // search input validation
       if(searchUserInput === '') {
         toast.error('Please enter a user name', {hideProgressBar: true, autoClose: 3000});
@@ -307,10 +325,10 @@ function Profile() {
         } else {
           toast.error('Sorry, no match', {hideProgressBar: true, autoClose: 3000});
           setLoading(false);
-        }
+        };
 
         setSearchUserInput('');
-      }
+      };
     };
 
     const clearUserSearchResultonClick = () => {
@@ -330,6 +348,157 @@ function Profile() {
       }; 
     };
 
+    const onEdit = (orgId) => { 
+      
+    };
+
+    const onDelete = (orgId) => { 
+      if (window.confirm('Sure to lock this user?')) {
+        toast.success(`${orgId} locked`, {hideProgressBar: true, autoClose: 3000})
+      }; 
+    };
+
+
+    // Create an organisation
+    const orgFormNameOnChange = (e) => {
+      setOrgFormData((prevState) => ({
+        ...prevState,
+        orgCreator: auth.currentUser.email,
+        orgName: e.target.value
+      }));
+      console.log(`get org name input: ${orgFormData.orgName}`);
+    };
+
+    const orgFormAdminOnChange = (e) => {
+      setOrgAdmins(e.target.value);
+      console.log(`get org admin input: ${orgAdmins}`);
+
+      const adminArray = orgAdmins.split(',').map((item) => item.trim());
+      adminArray.push(auth.currentUser.email);
+
+      setOrgFormData((prevState) => ({
+        ...prevState,
+        orgAdmin: adminArray
+      }));
+    };
+
+    const orgFormOnSubmit = async (e) => {
+      e.preventDefault();
+
+      console.log(`saved in orgFormData orgAdmin array: ${orgFormData.orgAdmin}`);
+      setLoading(true);
+      const docRef = await addDoc(collection(db, 'orgs'), orgFormData);
+
+      console.log(`org added with id: ${docRef.id}`);
+      setLoading(false);
+      setOrgFormData({
+        orgName: '',
+        orgCreator: '',
+        orgAdmin: [],
+        orgLogo: '',
+        members: [],
+        devices: []
+      });
+      toast.success('New Organisation Added!', {hideProgressBar: true, autoClose: 3000});
+    };
+
+
+    // search org by name
+    const searchOrgOnChange = (e) => {
+      setSearchOrgInput(e.target.value);
+    };
+
+    const searchOrgOnSubmit = async (e) => {
+      e.preventDefault();
+
+      // search input validation
+      if(searchOrgInput === '') {
+        toast.error('Please enter an Organisation name', {hideProgressBar: true, autoClose: 3000});
+      } else {
+        setLoading(true);
+
+        console.log(`search input: ${searchOrgInput}`);
+        // get collection reference
+        const orgRef = collection(db, 'orgs');
+        console.log(`orgRef got? : ${orgRef}`);
+        // create a query
+        const q = query(
+          orgRef,
+          where('orgName', '==', searchOrgInput),
+        );
+        const querySnapshot = await getDocs(q);
+        // const querySnapshot = await userRef.where('name', '==', searchUserInput).orderBy('timestamp', 'desc').getDocs();
+        console.log(`querySnapshot: ${querySnapshot.length}`);
+        if(querySnapshot.size !== 0) {
+          let orgs = [];
+          setLoading(false);
+          querySnapshot.forEach((doc) => {
+            return orgs.push({
+              id: doc.id,
+              data: doc.data()
+            });
+          });
+          setLoading(false);
+          console.log(`the org search result: ${orgs}`);
+          setOrgSearchResult(orgs);
+          setClearOrgSearchResult(true);
+        } else {
+          toast.error('Sorry, no match', {hideProgressBar: true, autoClose: 3000});
+          setLoading(false);
+        };
+
+        setSearchOrgInput('');
+      };
+    };
+
+    
+    const showOrgs = async () => {
+      try {
+        setLoading(true);
+        const orgsRef = collection(db, 'orgs');
+        const orgsArray = [];
+        const q = query(
+          orgsRef,
+          orderBy('orgName'),
+          // orderBy('name', (a, b) => {
+          //   const nameA = a.data().name.toLowerCase();
+          //   const nameB = b.data().name.toLowerCase();
+          //   if(nameA < nameB) return -1;
+          //   if(nameA > nameB) return 1;
+          //   return 0;
+          // }),
+        );
+        const orgsSnapshot = await getDocs(q);
+        console.log(`what is the orgSnapshot: ${orgsSnapshot.size}`);
+        if(orgsSnapshot.size !== 0) {
+          orgsSnapshot.forEach((doc) => {
+            return orgsArray.push({
+              id: doc.id,
+              data: doc.data()
+            });
+          });
+        } else {
+          toast.error('No Orgnasation yet, add one please!', {hideProgressBar: true, autoClose: 3000});
+        }
+
+        setOrgsListing(orgsArray);
+        setLoading(false);
+        setClearOrgsListing(true);
+      } catch (error) {
+        console.log(`Listing all orgs error: ${error}`);
+      }       
+    };
+
+
+    const clearOrgSearchResultonClick = () => {
+      setOrgSearchResult([]);
+      setClearOrgSearchResult(false);
+    };
+
+    const clearOrgsListingonClick = () => {
+      setOrgsListing([]);
+      setClearOrgsListing(false);
+    };
 
 
 
@@ -349,7 +518,7 @@ function Profile() {
                     type='file'
                     id='avatar'
                     accept='.jpg, .png, .jpeg'
-                    onChange={formOnChange}
+                    onChange={profileFormOnChange}
                     disabled={!updateClick}
                     className={!updateClick ? 'formInputFile' : 'formInputFileActive'}
                   />                                    
@@ -360,7 +529,7 @@ function Profile() {
                     type="text"
                     id='name'
                     value={name}
-                    onChange={formOnChange}
+                    onChange={profileFormOnChange}
                     disabled={!updateClick}
                     className={!updateClick ? 'form-control profileName' : 'form-control profileNameActive'}
                   />
@@ -380,7 +549,7 @@ function Profile() {
               <div 
                 onClick={() => {
                 updateClick && 
-                formOnSubmit()
+                profileFormOnSubmit()
                 setUpdateClick((prevState) => !prevState)
                 }} 
                 className='btn btn-reverse' 
@@ -389,12 +558,12 @@ function Profile() {
               </div>
             </section>
 
-            { isAdmin && (
+            { isAdmin && <>
               <section className='form'>
-                <p style={{paddingTop: '30px', paddingBottom: '10px', textAlign: 'left', fontWeight: 'bold'}}>User Management</p> 
+                <header className="heading" style={{marginTop: '50px'}}>User Management</header> 
                 <form onSubmit={searchUserOnSubmit}>
                   <div className='form-group'>
-                  <label htmlFor="searchUser">Search Users by Name</label>
+                  <label htmlFor="searchUser" style={{fontWeight: 'bold', marginBottom: '20px'}}>Search Users by Name</label>
                     <input 
                       type='text'
                       id='searchUser'
@@ -427,8 +596,10 @@ function Profile() {
                   </div>
                 )}
 
-                <button className='btn btn-block' onClick={showUsers}>List all users</button>
-
+                <div style={{paddingTop: '20px', paddingBottom: '20px'}}>
+                  <button className='btn btn-block' onClick={showUsers}>List all users</button>
+                </div>
+                
                 {usersListing && (
                   <div>
                     <ul>
@@ -446,13 +617,11 @@ function Profile() {
 
                 {clearUsersListing && (
                   <div>
-                    <button onClick={clearUsersListingonClick} className='btn btn-block btn-reverse'>Clear User Listing</button>
+                    <button onClick={clearUsersListingonClick} className='btn btn-block btn-reverse'>Hide Users Listing</button>
                   </div>
                 )}
               </section>
-            )} 
 
-            { isAdmin && (
               <section className='form'>
                 <p style={{paddingTop: '30px', paddingBottom: '10px', textAlign: 'left', fontWeight: 'bold'}}>Enable Admin</p>
                 <form onSubmit={adminOnSubmit}>
@@ -471,7 +640,107 @@ function Profile() {
                   </div>       
                 </form>
               </section>
-            )}                 
+
+
+              <section className='form'>                  
+                <header className="heading" style={{marginTop: '50px'}}>Organisation Management</header>
+
+                <form onSubmit={searchOrgOnSubmit}>
+                  <div className='form-group'>
+                  <label htmlFor="searchOrg" style={{fontWeight: 'bold', marginBottom: '20px'}}>Search Org by Name</label>
+                    <input 
+                      type='text'
+                      id='searchOrg'
+                      value={searchOrgInput}
+                      className='form-control'
+                      onChange={searchOrgOnChange}
+                    />
+                    <button type='submit' className="btn btn-block">Search</button>
+                  </div>
+                </form>
+
+                {orgSearchResult && (
+                  <div>
+                    <ul>
+                      {orgSearchResult.map((orgItem) => (
+                        <ListingOrg
+                          orgData={orgItem.data}
+                          id={orgItem.id}
+                          key={orgItem.id}
+                          onEdit={() => onEdit(orgItem.id)}
+                          onDelete={() => onDelete(orgItem.id)}
+                        />
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {clearOrgSearchResult && (
+                  <div>
+                    <button onClick={clearOrgSearchResultonClick} className='btn btn-block btn-reverse'>Clear Search Result</button>
+                  </div>
+                )}
+
+
+                <p style={{paddingTop: '30px', paddingBottom: '10px', textAlign: 'left', fontWeight: 'bold'}}>Add an Organisation</p>
+                <form onSubmit={orgFormOnSubmit}>
+                  <div className='form-group'>
+                    <input 
+                      type='text'
+                      id='orgName'
+                      value={orgName}
+                      className='form-control'
+                      placeholder='Organisation Name'
+                      onChange={orgFormNameOnChange}
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <input 
+                        type='text'
+                        id='orgAdmin'
+                        name='orgAdmin'
+                        onChange={orgFormAdminOnChange}
+                        className='form-control'
+                        placeholder='Organisation Admin Email'
+                      />
+                    <p style={{fontStyle: 'italic', fontSize: '12px', textAlign: 'start'}}>Please note: use comma for multiple inputs. Admin must be a registered user. You will be the admin automatically.</p>
+                  </div>
+                  <div className='form-group'>
+                    <button className='btn btn-block'>Add</button>     
+                  </div>       
+                </form>
+
+
+                <div style={{paddingTop: '20px', paddingBottom: '20px'}}>
+                  <button className='btn btn-block' onClick={showOrgs}>List all ogranisations</button>
+                </div>
+
+                {orgsListing && (
+                  <div>
+                    <ul>
+                      {orgsListing.map((orgItem) => (
+                        <ListingOrg 
+                          orgData={orgItem.data} 
+                          id={orgItem.id} 
+                          key={orgItem.id} 
+                          onEdit={() => onEdit(orgItem.id)}
+                          onDelete={() => onDelete(orgItem.id)}
+                        />
+                      ))}
+                    </ul>
+                  </div>)                 
+                }
+
+                {clearOrgsListing && (
+                  <div>
+                    <button onClick={clearOrgsListingonClick} className='btn btn-block btn-reverse'>Hide Organisatons List</button>
+                  </div>
+                )}
+
+              </section>
+            </>}             
           </main>
       </div>
       ) : (
