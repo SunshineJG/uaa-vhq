@@ -27,9 +27,11 @@ function Profile() {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [newImage, setNewImage] = useState(false);
-  const [usersExist, setUsersExist] = useState(false);
-  const [searchUser, setSearchUser] = useState('');
+  const [searchUserInput, setSearchUserInput] = useState('');
+  const [userSearchResult, setUserSearchResult] = useState([]);
+  const [clearUserSearchResult, setClearUserSearchResult] = useState(false);
   const [usersListing, setUsersListing] = useState([]);
+  const [clearUsersListing, setClearUsersListing] = useState(false);
   const [user, setUser] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
@@ -113,7 +115,7 @@ function Profile() {
   };
 
 
-  // for profile update
+  // Profile update
   const formOnChange = (e) => {
     if(e.target.files) {
       console.log(`what is in the file upload field: ${e.target.files} and value: ${e.target.value}`);
@@ -222,13 +224,24 @@ function Profile() {
   };
 
 
-    //List all users in users
+    // List all users
     const showUsers = async () => {     
       try {
         setLoading(true);
         const usersRef = collection(db, 'users');
         const usersArray = [];
-        const usersSnapshot = await getDocs(usersRef);
+        const q = query(
+          usersRef,
+          orderBy('name'),
+          // orderBy('name', (a, b) => {
+          //   const nameA = a.data().name.toLowerCase();
+          //   const nameB = b.data().name.toLowerCase();
+          //   if(nameA < nameB) return -1;
+          //   if(nameA > nameB) return 1;
+          //   return 0;
+          // }),
+        );
+        const usersSnapshot = await getDocs(q);
         console.log(`what is the userSnapshot: ${usersSnapshot}`);
         if(usersSnapshot) {
           usersSnapshot.forEach((doc) => {
@@ -237,11 +250,10 @@ function Profile() {
               data: doc.data()
             });
           });
-
-          setUsersExist(true);
         }
 
         setUsersListing(usersArray);
+        setClearUsersListing(true);
         console.log(usersListing);
         setLoading(false);
       } catch (error) {
@@ -252,53 +264,71 @@ function Profile() {
 
 
 
-    //user search
-    const searchUserOnChange = async (e) => { 
-      setSearchUser(e.target.value);
+    // Search user by name
+    const searchUserOnChange = (e) => {
+      setSearchUserInput(e.target.value);
+      console.log(`get search input: ${searchUserInput}`);
+    }
 
-      try {
+    const searchUserOnSubmit = async (e) => {
+      e.preventDefault();
 
-        console.log(`search input: ${e.target.value}`);
+
+      // search input validation
+      if(searchUserInput === '') {
+        toast.error('Please enter a user name', {hideProgressBar: true, autoClose: 3000});
+      } else {
+        setLoading(true);
+
+        console.log(`search input: ${searchUserInput}`);
         // get collection reference
-        const usersRef = collection(db, 'users');
-        console.log(`usersRef got? : ${usersRef}`);
+        const userRef = collection(db, 'users');
+        console.log(`usersRef got? : ${userRef}`);
         // create a query
         const q = query(
-          usersRef,
-          where('name', '==', e.target.value),
-          orderBy('timestamp', 'desc')
+          userRef,
+          where('name', '==', searchUserInput),
         );
-
-        let users = [];
-        // execute query
-        const querySnap = await getDocs(q);
-        if(querySnap) {
-          querySnap.forEach((doc) => {
+        const querySnapshot = await getDocs(q);
+        // const querySnapshot = await userRef.where('name', '==', searchUserInput).orderBy('timestamp', 'desc').getDocs();
+        console.log(`querySnapshot: ${querySnapshot.length}`);
+        if(querySnapshot.size !== 0) {
+          let users = [];
+          setLoading(false);
+          querySnapshot.forEach((doc) => {
             return users.push({
               id: doc.id,
               data: doc.data()
             });
           });
-        };
-        
-        setUsersListing(users);
-        setLoading(false);   
-      } catch (error) {
-        console.log(`getting user list error: ${error}`);
-      };
-      
+          console.log(`the search result: ${users}`);
+          setUserSearchResult(users);
+          setClearUserSearchResult(true);
+        } else {
+          toast.error('Sorry, no match', {hideProgressBar: true, autoClose: 3000});
+          setLoading(false);
+        }
+
+        setSearchUserInput('');
+      }
     };
 
-    // const searchUserOnSubmit = () => {
+    const clearUserSearchResultonClick = () => {
+      setUserSearchResult([]);
+      setClearUserSearchResult(false);
+    };
 
-    // };
+    const clearUsersListingonClick = () => {
+      setUsersListing([]);
+      setClearUsersListing(false);
+    };
 
 
-  const onDisable = (userId) => { 
-    if (window.confirm('Are you sure you want to delete?')) {
-      toast.success(`${userId} locked`, {hideProgressBar: true, autoClose: 3000})
-    }; 
-  };
+    const onDisable = (userId) => { 
+      if (window.confirm('Sure to lock this user?')) {
+        toast.success(`${userId} locked`, {hideProgressBar: true, autoClose: 3000})
+      }; 
+    };
 
 
 
@@ -362,22 +392,44 @@ function Profile() {
             { isAdmin && (
               <section className='form'>
                 <p style={{paddingTop: '30px', paddingBottom: '10px', textAlign: 'left', fontWeight: 'bold'}}>User Management</p> 
-                <form>
+                <form onSubmit={searchUserOnSubmit}>
                   <div className='form-group'>
                   <label htmlFor="searchUser">Search Users by Name</label>
                     <input 
                       type='text'
                       id='searchUser'
-                      // value={searchUser}
+                      value={searchUserInput}
                       className='form-control'
                       onChange={searchUserOnChange}
                     />
+                    <button type='submit' className="btn btn-block">Search</button>
                   </div>
                 </form>
 
+                {userSearchResult && (
+                  <div>
+                    <ul>
+                      {userSearchResult.map((userItem) => (
+                        <ListingUser
+                          userData={userItem.data}
+                          id={userItem.id}
+                          key={userItem.id}
+                          onDisable={() => onDisable(userItem.id)}
+                        />
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {clearUserSearchResult && (
+                  <div>
+                    <button onClick={clearUserSearchResultonClick} className='btn btn-block btn-reverse'>Clear Search Result</button>
+                  </div>
+                )}
+
                 <button className='btn btn-block' onClick={showUsers}>List all users</button>
 
-                {usersExist && (
+                {usersListing && (
                   <div>
                     <ul>
                       {usersListing.map((userItem) => (
@@ -390,7 +442,13 @@ function Profile() {
                       ))}
                     </ul>
                   </div>)                 
-                }       
+                }
+
+                {clearUsersListing && (
+                  <div>
+                    <button onClick={clearUsersListingonClick} className='btn btn-block btn-reverse'>Clear User Listing</button>
+                  </div>
+                )}
               </section>
             )} 
 
