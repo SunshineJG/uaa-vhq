@@ -58,6 +58,7 @@ function Register() {
             ...formData,
             organisation: '',
             avatar: '',
+            disabled: false,
             timestamp: serverTimestamp()
           };
 

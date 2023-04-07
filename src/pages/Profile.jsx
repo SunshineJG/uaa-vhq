@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { db, functions } from '../firebase.config'
 import { 
   updateDoc,
@@ -42,11 +43,13 @@ function Profile() {
   const [clearOrgsListing, setClearOrgsListing] = useState(false);
 
   const [user, setUser] = useState(null);
+  const [userCopy, setUserCopy] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     avatar: '',
-    organisation: ''
+    organisation: '',
+    disabled: false
   });
   const [avatarUrl, setAvatarUrl] = useState('');
   const [loggedIn, setLoggedIn] = useState(false);
@@ -61,10 +64,12 @@ function Profile() {
   });
   const [orgAdmins, setOrgAdmins] = useState('');
 
-  const { name, email, avatar, organisation } = formData;
+  const { name, email, avatar } = formData;
   const { orgName } = orgFormData;
   // const {loggedIn} = useAuthStatus();
   // const user = auth.currentUser;
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     // update user state when authentication state change
@@ -136,6 +141,16 @@ function Profile() {
 
   // Profile update
   const profileFormOnChange = (e) => {
+    let boolean = null;
+
+    if(e.target.value === 'true') {
+      boolean = true
+    };
+
+    if(e.target.value === 'false') {
+      boolean = false
+    };
+
     if(e.target.files) {
       console.log(`what is in the file upload field: ${e.target.files} and value: ${e.target.value}`);
       if(e.target.files !== undefined && e.target.value !== '') {
@@ -151,7 +166,7 @@ function Profile() {
     } else {
       setFormData((prevState) => ({
         ...prevState,
-        [e.target.id]: e.target.value
+        [e.target.id]: boolean ?? e.target.value,
       }));
     };
 
@@ -342,19 +357,76 @@ function Profile() {
     };
 
 
-    const onDisable = (userId) => { 
+    const onDisable = async (userId) => { 
+      const disableUser = httpsCallable(functions, 'disableUser');
       if (window.confirm('Sure to lock this user?')) {
-        toast.success(`${userId} locked`, {hideProgressBar: true, autoClose: 3000})
+        disableUser({userId})
+          .then((result) => {
+            if(result.data.success){
+              toast.success('User is locked', {hideProgressBar: true, autoClose: 3000});
+            } else {
+              toast.error(`${result.data.message}`, {hideProgressBar: true, autoClose: 3000});
+              console.error(result.data.message);
+            }          
+        })
+        .catch((error) => {
+          console.log('error disable user', error);
+        });
+
+        const userRef = doc(db, 'users', userId);
+        if(userRef) {
+          await updateDoc(userRef, { disabled: true })
+          .then(() => {
+            console.log('user disabled set true');
+          })
+          .catch((error) => {
+            console.log('Error updating user disabled status:', error);
+          });
+        } else {
+          console.log('Cannot get user info');
+        }
       }; 
     };
 
-    const onEdit = (orgId) => { 
-      
+    const onEnable = async (userId) => {
+      const enableUser = httpsCallable(functions, 'enableUser');
+      if (window.confirm('Do you want to unlock this user?')) {
+        enableUser({userId})
+          .then((result) => {
+            if(result.data.success){
+              toast.success('User is locked', {hideProgressBar: true, autoClose: 3000});
+            } else {
+              toast.error(`${result.data.message}`, {hideProgressBar: true, autoClose: 3000});
+              console.error(result.data.message);
+            }          
+        })
+        .catch((error) => {
+          console.log('error to enable user', error);
+        })
+      };
+       
+      const userRef = doc(db, 'users', userId);
+      if(userRef) {
+        await updateDoc(userRef, { disabled: false })
+          .then(() => {
+            console.log('user disabled set false');
+          })
+          .catch((error) => {
+            console.log('Error updating user disabled status:', error);
+          });
+      } else {
+        console.log('cannot get user info');
+      };
+
     };
 
+    const onView = (userId) => navigate(`/profile/${userId}`);
+
+    const onEdit = (orgId) => navigate(`/orgs/${orgId}`);
+
     const onDelete = (orgId) => { 
-      if (window.confirm('Sure to lock this user?')) {
-        toast.success(`${orgId} locked`, {hideProgressBar: true, autoClose: 3000})
+      if (window.confirm('Sure to delete this organisation?')) {
+        toast.success(`${orgId} locked`, {hideProgressBar: true, autoClose: 3000});
       }; 
     };
 
@@ -477,13 +549,13 @@ function Profile() {
               data: doc.data()
             });
           });
+          setOrgsListing(orgsArray);
+          setClearOrgsListing(true);
         } else {
           toast.error('No Orgnasation yet, add one please!', {hideProgressBar: true, autoClose: 3000});
         }
 
-        setOrgsListing(orgsArray);
         setLoading(false);
-        setClearOrgsListing(true);
       } catch (error) {
         console.log(`Listing all orgs error: ${error}`);
       }       
@@ -584,6 +656,8 @@ function Profile() {
                           id={userItem.id}
                           key={userItem.id}
                           onDisable={() => onDisable(userItem.id)}
+                          onEnable={() => onEnable(userItem.id)}
+                          onView={() => onView(userItem.id)}
                         />
                       ))}
                     </ul>
@@ -605,10 +679,12 @@ function Profile() {
                     <ul>
                       {usersListing.map((userItem) => (
                         <ListingUser 
-                          userData={userItem.data} 
+                          userData={userItem.data}
                           id={userItem.id} 
                           key={userItem.id} 
                           onDisable={() => onDisable(userItem.id)}
+                          onEnable={() => onEnable(userItem.id)}
+                          onView={() => onView(userItem.id)}
                         />
                       ))}
                     </ul>

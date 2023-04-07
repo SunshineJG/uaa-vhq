@@ -440,7 +440,20 @@ footer {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
   position: relative;
+}
+
+.usersListing-reverse {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  position: relative;
+  background-color: #ebe9e9;
 }
 
 

@@ -10,7 +10,7 @@ const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 admin.initializeApp();
 
-exports.addAdminRole = functions.https.onCall((data, context) => {
+exports.addAdminRole = functions.https.onCall(async (data, context) => {
   // get user by email and add custom claim (admin)
   return admin.auth().getUserByEmail(data.email)
       .then((user) => {
@@ -21,3 +21,28 @@ exports.addAdminRole = functions.https.onCall((data, context) => {
         return error;
       });
 });
+
+
+exports.disableUser = functions.https.onCall(async (data, context) => {
+  const userId = data.userId;
+  try {
+    await admin.auth().updateUser(userId, {disabled: true});
+    return {success: true};
+  } catch (error) {
+    console.error(error);
+    return {success: false, message: error.message};
+  }
+});
+
+
+exports.enableUser = functions.https.onCall(async (data, context) => {
+  const userId = data.userId;
+  try {
+    await admin.auth().updateUser(userId, {disabled: false});
+    return {success: true};
+  } catch (error) {
+    console.error(error);
+    return {success: false, message: error.message};
+  }
+});
+

@@ -36,7 +36,7 @@ function Login() {
         navigate(`/profile/${userCredential.user.uid}`);
       }
     } catch (error) {
-      toast.error('Bad user credentials', {hideProgressBar: true, autoClose: 3000});
+      toast.error(`${error.code}`, {hideProgressBar: true, autoClose: 3000});
     }
   };
 
