@@ -25,24 +25,30 @@ function Orgnisation() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [loggedIn, setLoggedIn] = useState(false);
-  const [orgsListing, setOrgsListing] = useState([]);
-  // const [visible, setVisible] = useState(false);
+  const [orgRefresh, setOrgRefresh] = useState(false);
+  const [orgAdmins, setOrgAdmins] = useState('');
+  const [orgsListing, setOrgsListing] = useState(null);
+  const [orgFormData, setOrgFormData] = useState({
+    orgName: '',
+    orgLogo: '',
+    orgAdmin: [],
+  });
+  const [searchOrgInput, setSearchOrgInput] = useState('');
+  const [orgSearchResult, setOrgSearchResult] = useState([]);
+  const [clearOrgSearchResult, setClearOrgSearchResult] = useState(false);
 
+
+  const { orgName } = orgFormData;
   const navigate = useNavigate();
 
 
   useEffect(() => {
-    // update user state when authentication state change
+    // check if logged in
     onAuthStateChanged(auth, (user) => {
       if(user) {
         setUser(user);
-        // user.getIdTokenResult().then(idTokenResult => {
-        //   if(idTokenResult.claims.admin) {
-        //     setIsAdmin(true);
-        //   };
-        // });
         setLoggedIn(true);
-        console.log(`user displayName: ${user.displayName}`);
+        console.log(`Current user displayName: ${user.displayName}`);
 
         const showOrgs = async () => {
           try {
@@ -56,20 +62,16 @@ function Orgnisation() {
             const orgsSnapshot = await getDocs(q);
             console.log(`what is the orgSnapshot: ${orgsSnapshot.size}`);
             if(orgsSnapshot.size !== 0) {
-              console.log(`auth email: ${auth.currentUser.email}`);
-
               orgsSnapshot.forEach((doc) => {
                 return orgsArray.push({
                   id: doc.id,
                   data: doc.data(),
-                  // view: false
                 });
               });
+              setOrgsListing(orgsArray);
             } else {
-              toast.error('No Orgnasation yet', {hideProgressBar: true, autoClose: 3000});
-            }
-    
-            setOrgsListing(orgsArray);
+              setOrgsListing(null);
+            };
             setLoading(false);
           } catch (error) {
             console.log(`Listing all orgs error: ${error}`);
@@ -95,45 +97,166 @@ function Orgnisation() {
         // });
         
 
-        // const fetchUserProfile = async (user) => {
-        //   // get document ref
-        //   const userRef = doc(db, 'users', user.uid);
-        //   // get document data
-        //   const userSnap = await getDoc(userRef);
-        //   if(userSnap.exists) {
-        //     console.log(`user profile: ${userSnap.data()}`);
-        //     setFormData((prevState) => ({
-        //       ...prevState,
-        //       name: userSnap.data().name,
-        //       email: userSnap.data().email,
-        //       // avatar: userSnap.data().avatar,
-        //       organisation: userSnap.data().organisation
-        //     }));
-        //     setAvatarUrl(userSnap.data().avatar);
-        //     console.log(`start db avatarUrl: ${avatarUrl}`);
-        //   } else {
-        //     console.log('No such user!');
-        //   }          
-        // }
-
-        // fetchUserProfile(user);
-
         setLoading(false);
       } else {
         <Spinner />;
       }
     });
-  }, [auth]);
+  }, [auth, orgRefresh]);
 
-  const onEdit = (orgId) => navigate(`/orgs/${orgId}`)
+
+  // Create an organisation
+  const orgFormNameOnChange = (e) => {
+    setOrgFormData((prevState) => ({
+      ...prevState,
+      orgName: e.target.value
+    }));
+    console.log(`get org name input: ${orgFormData.orgName}`);
+  };
+
+  const orgFormAdminOnChange = (e) => {
+    setOrgAdmins(e.target.value);
+    console.log(`get org admin input: ${orgAdmins}`);
+
+    const adminArray = orgAdmins.split(',').map((item) => item.trim());
+    adminArray.push(auth.currentUser.email);
+
+    setOrgFormData((prevState) => ({
+      ...prevState,
+      orgAdmin: adminArray
+    }));
+  };
+
+  // const orgFormMemberOnChange = (e) => {
+  //   setOrgMembers(e.target.value);
+  //   console.log(`get org member input: ${orgAdmins}`);
+
+  //   const memberArray = orgMembers.split(',').map((item) => item.trim());
+  //   memberArray.push(auth.currentUser.email);
+
+  //   setOrgFormData((prevState) => ({
+  //     ...prevState,
+  //     orgMember: memberArray
+  //   }));
+  // };
+  
+  const orgFormOnSubmit = async (e) => {
+    e.preventDefault();
+
+    setLoading(true);
+    console.log(`saved in orgFormData orgAdmin array: ${orgFormData.orgAdmin}`);
+    setLoading(true);
+    const docRef = await addDoc(collection(db, 'orgs'), orgFormData);
+
+    console.log(`org added with id: ${docRef.id}`);
+    
+    setOrgRefresh((prevState) => !prevState);
+    setLoading(false);
+    setOrgFormData({
+      orgName: '',
+      orgLogo: '',
+      orgAdmin: [],
+    });
+    toast.success('New Organisation Added!', {hideProgressBar: true, autoClose: 3000});
+  };
+
+
+  // search org by name
+  const searchOrgOnChange = (e) => {
+    setSearchOrgInput(e.target.value);
+  };
+
+  const searchOrgOnSubmit = async (e) => {
+    e.preventDefault();
+
+    // search input validation
+    if(searchOrgInput === '') {
+      toast.error('Please enter an Organisation name', {hideProgressBar: true, autoClose: 3000});
+    } else {
+      setLoading(true);
+
+      console.log(`search input: ${searchOrgInput}`);
+      // get collection reference
+      const orgRef = collection(db, 'orgs');
+      console.log(`orgRef got? : ${orgRef}`);
+      // create a query
+      const q = query(
+        orgRef,
+        where('orgName', '==', searchOrgInput),
+      );
+      const querySnapshot = await getDocs(q);
+      // const querySnapshot = await userRef.where('name', '==', searchUserInput).orderBy('timestamp', 'desc').getDocs();
+      console.log(`querySnapshot: ${querySnapshot.length}`);
+      if(querySnapshot.size !== 0) {
+        let orgs = [];
+        setLoading(false);
+        querySnapshot.forEach((doc) => {
+          return orgs.push({
+            id: doc.id,
+            data: doc.data()
+          });
+        });
+        setLoading(false);
+        console.log(`the org search result: ${orgs}`);
+        setOrgSearchResult(orgs);
+        setClearOrgSearchResult(true);
+      } else {
+        toast.error('Sorry, no match', {hideProgressBar: true, autoClose: 3000});
+        setLoading(false);
+      };
+
+      setSearchOrgInput('');
+    };
+  };
+
+  const clearOrgSearchResultonClick = () => {
+    setOrgSearchResult([]);
+    setClearOrgSearchResult(false);
+  };
+
+
+  const onView = (orgId) => navigate(`/orgs/${orgId}`);
+
+  const onDelete = async (orgId) => { 
+    if (window.confirm('Sure to delete this organisation?')) {
+      setLoading(true);
+      const orgRef = doc(db, 'orgs', orgId);
+      await deleteDoc(orgRef);
+      toast.success(`Oragnisation removed from the system.`, {hideProgressBar: true, autoClose: 3000});
+
+      // check if there is no organisation
+      // const orgsRef = collection(db, 'orgs');
+      // const orgsArray = [];
+      // const q = query(
+      //   orgsRef,
+      //   orderBy('orgName'),
+      // );
+      // const orgsSnapshot = await getDocs(q);
+      // console.log(`what is the orgSnapshot: ${orgsSnapshot.size}`);
+      // if(orgsSnapshot.size !== 0) {
+      //   orgsSnapshot.forEach((doc) => {
+      //     return orgsArray.push({
+      //       id: doc.id,
+      //       data: doc.data(),
+      //     });
+      //   });
+      // };
+
+      // setOrgsListing(null);
+      setOrgRefresh((prevState) => !prevState);
+      setLoading(false);
+    };
+
+  };
 
   if(loading) { return <Spinner />};
 
   return <>
     {loggedIn ? (
-      <div className="container">
-        <header className="heading" style={{marginTop: '50px'}}>Organisation Management</header>
-        {orgsListing && (
+      <div className='container'>
+        <header className='heading' style={{marginTop: '50px'}}>Organisation Management</header>
+        {orgsListing ? ( 
+          <>
             <div>
               <ul>
                 {orgsListing.map((orgItem) => (
@@ -141,14 +264,86 @@ function Orgnisation() {
                     orgData={orgItem.data} 
                     id={orgItem.id} 
                     key={orgItem.id}
-                    onEdit={() => onEdit(orgItem.id)}
-                    // onDelete={() => onDelete(orgItem.id)}
-                    // view={orgItem.view}
+                    onView={() => onView(orgItem.id)}
+                    onDelete={() => onDelete(orgItem.id)}
                   />
                  ))}                  
               </ul>
-            </div>)                 
+            </div>
+            <form onSubmit={searchOrgOnSubmit}>
+              <div className='form-group'>
+                <label htmlFor="searchOrg" style={{fontWeight: 'bold', marginBottom: '20px'}}>Search Org by Name</label>
+                <input 
+                  type='text'
+                  id='searchOrg'
+                  value={searchOrgInput}
+                  className='form-control'
+                  onChange={searchOrgOnChange}
+                />
+                <button type='submit' className="btn btn-block">Search</button>
+              </div>
+          </form>
+  
+          {orgSearchResult && (
+            <div>
+              <ul>
+                {orgSearchResult.map((orgItem) => (
+                  <ListingOrg
+                    orgData={orgItem.data}
+                    id={orgItem.id}
+                    key={orgItem.id}
+                    onView={() => onView(orgItem.id)}
+                    onDelete={() => onDelete(orgItem.id)}
+                  />
+                ))}
+              </ul>
+            </div>
+          )}
+  
+          {clearOrgSearchResult && (
+            <div>
+              <button onClick={clearOrgSearchResultonClick} className='btn btn-block btn-reverse'>Clear Search Result</button>
+            </div>
+          )}
+          </>            
+          ) : ( 
+            <>
+              <div className='heading'>No Orgnasation yet</div>  
+            </> 
+          )               
         }
+
+
+        <p style={{paddingTop: '30px', paddingBottom: '10px', textAlign: 'left', fontWeight: 'bold'}}>Add an Organisation</p>
+        <form onSubmit={orgFormOnSubmit}>
+          <div className='form-group'>
+            <input 
+              type='text'
+              id='orgName'
+              value={orgName}
+              className='form-control'
+              placeholder='Organisation Name'
+              onChange={orgFormNameOnChange}
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <input 
+                type='text'
+                id='orgAdmin'
+                name='orgAdmin'
+                onChange={orgFormAdminOnChange}
+                className='form-control'
+                placeholder='Organisation Admin Email'
+              />
+            <p style={{fontStyle: 'italic', fontSize: '12px', textAlign: 'start'}}>Please note: use comma for multiple inputs. Admin must be a registered user. You will be the admin automatically.</p>
+          </div>
+          <div className='form-group'>
+            <button className='btn btn-block'>Add</button>     
+          </div>       
+        </form>
+
       </div>
       ) : (
         <div className='container'>

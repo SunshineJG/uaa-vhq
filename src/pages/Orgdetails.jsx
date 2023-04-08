@@ -1,19 +1,26 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { getAuth } from 'firebase/auth'
 import { getDoc, doc } from 'firebase/firestore'
 import { db } from '../firebase.config'
 import Spinner from '../components/Spinner'
 
-function Orgdetails() {
+function OrgDetails() {
   const auth = getAuth();
   const [loading, setLoading] = useState(true);
-  const [orgInfo, setOrgInfo] = useState(null);
+  const [orgExist, setOrgExist] = useState(false);
+  const [updateClick, setUpdateClick] = useState(false);
+  const [orgFormData, setOrgFormData] = useState({
+    id: '',
+    orgName: '',
+    orgLogo: '',
+    orgAdmin: [],
+    orgMember: [],
+    device: []
+  });
 
   const params = useParams();
-  const navigate = useNavigate();
   console.log(`what is in the params: ${params.orgId}`);
-  console.log(`what is in the orgInfo: ${orgInfo}`);
 
   useEffect(() => {
     const fetchOrgInfo = async () => {
@@ -21,9 +28,17 @@ function Orgdetails() {
       const orgSnapshot = await getDoc(orgRef);
 
       if(orgSnapshot.exists()) {
+        setOrgExist(true);
         console.log(`got orgSnapshot from db: ${orgSnapshot}`);
         console.log(`got orgSnapshot data from db: ${orgSnapshot.data().orgName}`);
-        setOrgInfo(orgSnapshot.data());
+        setOrgFormData({
+          id: orgSnapshot.id,
+          orgName: orgSnapshot.data().orgName,
+          orgLogo: orgSnapshot.data().orgLogo,
+          orgAdmin: orgSnapshot.data().orgAdmin,
+          orgMember: orgSnapshot.data().orgMember,
+          device: orgSnapshot.data().device
+        });
 
         setLoading(false);
       }
@@ -31,7 +46,14 @@ function Orgdetails() {
 
     fetchOrgInfo();
 
-  }, [params.orgId]);
+  }, [orgFormData, params.orgId]);
+
+
+  const orgFormOnSubmit = (e) => {
+    e.preventDefault();
+
+
+  };
 
 
   if(loading) {
@@ -40,25 +62,36 @@ function Orgdetails() {
 
 
   return ( <>
-    {orgInfo ? (
+    {orgExist ? (
     <div className='container'>
-      <header className='heading'>{orgInfo.orgLogo && <img src={orgInfo.orgLogo} alt="orgLogo" />}{orgInfo.orgName}</header>
-      <div style={{marginBottom: '20px'}}>
-        <p style={{fontWeight: 'bold'}}>Creator: </p>
-        <p style={{fontStyle: 'italic'}}>{orgInfo.orgCreator}</p>
-      </div>
+      <header className='heading'>{orgFormData.orgLogo && <img src={orgFormData.orgLogo} alt="orgLogo" />}{orgFormData.orgName}</header>
       <div style={{marginBottom: '20px'}}>
         <p style={{fontWeight: 'bold'}}>Admin: </p>
-        {orgInfo.orgAdmin.map((orgadmin) => (<p key={orgadmin} style={{fontStyle: 'italic'}}>{orgadmin}</p>))}
+        {orgFormData.orgAdmin.map((orgadmin) => (<p key={orgadmin} style={{fontStyle: 'italic'}}>{orgadmin}</p>))}
       </div>
       <div style={{marginBottom: '20px'}}>
         <p style={{fontWeight: 'bold'}}>Member: </p>
-        {orgInfo.members.map((orgmember) => (<p key={orgmember} style={{fontStyle: 'italic'}}>{orgmember}</p>))}
+        {orgFormData.orgMember.map((orgmember) => (<p key={orgmember} style={{fontStyle: 'italic'}}>{orgmember}</p>))}
       </div>
       <div style={{marginBottom: '20px'}}>
         <p style={{fontWeight: 'bold'}}>Device: </p>
-        {orgInfo.devices.map((orgdevices) => (<p key={orgdevices} style={{fontStyle: 'italic'}}>{orgdevices}</p>))}
+        {orgFormData.device.map((orgdevices) => (<p key={orgdevices} style={{fontStyle: 'italic'}}>{orgdevices}</p>))}
       </div>
+
+      <form>
+        <div
+          onClick={() => {
+            updateClick &&
+            orgFormOnSubmit &&
+            setUpdateClick((prevState) => !prevState)
+          }}
+          className={!updateClick ? 'btn btn-reverse' : 'btn'}
+          style={{width: '50%'}}
+        >{!updateClick ? 'Update Org Info' : 'Submit'}
+        </div>
+      </form>
+      
+
     </div> ) : (
       <div className="container">
         <header className='heading'>No Organisation yet</header>
@@ -68,4 +101,4 @@ function Orgdetails() {
   )
 }
 
-export default Orgdetails
+export default OrgDetails

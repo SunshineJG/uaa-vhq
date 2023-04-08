@@ -53,6 +53,11 @@ function Header() {
               </Link>
             </li>
             <li>
+              <Link to='/users'>
+                <FaBuilding />Users
+              </Link>
+            </li>
+            <li>
               <Link to='/orgs'>
                 <FaBuilding />Orgnisation
               </Link>
