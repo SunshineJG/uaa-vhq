@@ -69,15 +69,18 @@ function OrgDetails() {
         <p style={{fontWeight: 'bold'}}>Admin: </p>
         {orgFormData.orgAdmin.map((orgadmin) => (<p key={orgadmin} style={{fontStyle: 'italic'}}>{orgadmin}</p>))}
       </div>
-      <div style={{marginBottom: '20px'}}>
+      {orgFormData.orgMember && (
+        <div style={{marginBottom: '20px'}}>
         <p style={{fontWeight: 'bold'}}>Member: </p>
         {orgFormData.orgMember.map((orgmember) => (<p key={orgmember} style={{fontStyle: 'italic'}}>{orgmember}</p>))}
-      </div>
-      <div style={{marginBottom: '20px'}}>
-        <p style={{fontWeight: 'bold'}}>Device: </p>
-        {orgFormData.device.map((orgdevices) => (<p key={orgdevices} style={{fontStyle: 'italic'}}>{orgdevices}</p>))}
-      </div>
-
+        </div>
+      )}
+      {orgFormData.device && (
+        <div style={{marginBottom: '20px'}}>
+          <p style={{fontWeight: 'bold'}}>Device: </p>
+          {orgFormData.device.map((orgdevices) => (<p key={orgdevices} style={{fontStyle: 'italic'}}>{orgdevices}</p>))}
+        </div>
+      )}
       <form>
         <div
           onClick={() => {

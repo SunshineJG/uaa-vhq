@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { db } from '../firebase.config'
+import { useState, useEffect } from 'react';
+import { db } from '../firebase.config';
 import { 
   updateDoc,
   doc,
@@ -12,14 +12,14 @@ import {
   documentId,
   addDoc,
   getDoc
-} from 'firebase/firestore'
-import { getAuth, onAuthStateChanged, getIdTokenResult, updateProfile } from 'firebase/auth'
-import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage'
-// import { useAuthStatus } from '../hooks/useAuthStatus'
-import { toast } from 'react-toastify'
-import ListingUser from '../components/ListingUser'
-import ListingOrg from '../components/ListingOrg'
-import Spinner from '../components/Spinner'
+} from 'firebase/firestore';
+import { getAuth, onAuthStateChanged, getIdTokenResult, updateProfile } from 'firebase/auth';
+import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+// import { useAuthStatus } from '../hooks/useAuthStatus';
+import { toast } from 'react-toastify';
+import ListingUser from '../components/ListingUser';
+import ListingOrg from '../components/ListingOrg';
+import Spinner from '../components/Spinner';
 
 
 function Profile() {

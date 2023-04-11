@@ -1,6 +1,6 @@
-import { useState } from 'react'
-import { FaUnlock, FaLock, FaEye } from 'react-icons/fa'
-import vhq_logo from '../assets/jpg/vhq_logo.jpg'
+import { useState } from 'react';
+import { FaUnlock, FaLock, FaEye } from 'react-icons/fa';
+import vhq_logo from '../assets/jpg/vhq_logo.jpg';
 
 function ListingUser({ userData, id, onDisable, onEnable, onView }) {
 

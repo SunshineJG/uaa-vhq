@@ -1,9 +1,15 @@
-import { useNavigate, useSearchParams } from 'react-router-dom'
-import { FaEdit, FaEye, FaTrash } from 'react-icons/fa'
-import vhq_logo from '../assets/jpg/vhq_logo.jpg'
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { FaEdit, FaEye, FaTrash } from 'react-icons/fa';
+import vhq_logo from '../assets/jpg/vhq_logo.jpg';
 
 function ListingOrg({orgData, id, onView, onDelete }) {
-
+  const orgAdmin = [];
+  orgData.admins.forEach((user) => {
+    orgAdmin.push({
+      name: user.name,
+      email: user.email
+    });
+  });
   const navigate = useNavigate();
   // const params = useSearchParams({
   //   q: id
@@ -19,7 +25,7 @@ function ListingOrg({orgData, id, onView, onDelete }) {
         </div>
         <div>
           <p style={{fontWeight: 'bold'}}>Admin:</p>  
-          {orgData.orgAdmin.map((admin) => (<p key={admin}>{admin}</p>))}
+          {orgData.orgAdmin.map((admin) => (<p key={admin.email}>{admin.name}<span style={{fontStyle: 'italic'}}>{admin.email}</span></p>))}
         </div>
         {/* {view && <> */}
           <div>

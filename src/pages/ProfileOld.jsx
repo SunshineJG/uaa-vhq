@@ -20,7 +20,7 @@ import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/
 // import { useAuthStatus } from '../hooks/useAuthStatus'
 import { toast } from 'react-toastify'
 import ListingUser from '../components/ListingUser'
-import ListingOrg from '../components/ListingOrg'
+import ListingOrg from '../components/ListingOrgWithSubcollection'
 import Spinner from '../components/Spinner'
 
 

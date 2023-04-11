@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react'
-import { FaSignInAlt, FaSignOutAlt, FaUser, FaHome, FaUserPlus, FaBuilding } from 'react-icons/fa'
-import { Link, useNavigate } from 'react-router-dom'
-import { auth } from '../firebase.config'
-import vhq_logo from '../assets/jpg/vhq_logo.jpg'
-// import { useAuthStatus } from '../hooks/useAuthStatus'
-import { onAuthStateChanged } from 'firebase/auth'
+import { useState, useEffect } from 'react';
+import { FaSignInAlt, FaSignOutAlt, FaUser, FaHome, FaUserPlus, FaBuilding } from 'react-icons/fa';
+import { Link, useNavigate } from 'react-router-dom';
+import { auth } from '../firebase.config';
+import vhq_logo from '../assets/jpg/vhq_logo.jpg';
+// import { useAuthStatus } from '../hooks/useAuthStatus';
+import { onAuthStateChanged } from 'firebase/auth';
 
 function Header() {
   // const { loggedIn, checkingStatus } = useAuthStatus();

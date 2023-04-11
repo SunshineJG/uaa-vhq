@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { db, functions } from '../firebase.config'
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { db, functions } from '../firebase.config';
 import { 
   updateDoc,
   doc,
@@ -12,13 +12,13 @@ import {
   deleteDoc,
   documentId,
   addDoc,
-  getDoc
-} from 'firebase/firestore'
-import { getAuth, onAuthStateChanged, getIdTokenResult, updateProfile } from 'firebase/auth'
-// import { useAuthStatus } from '../hooks/useAuthStatus'
-import { toast } from 'react-toastify'
-import ListingOrg from '../components/ListingOrg'
-import Spinner from '../components/Spinner'
+  setDoc
+} from 'firebase/firestore';
+import { getAuth, onAuthStateChanged, getIdTokenResult, updateProfile } from 'firebase/auth';
+// import { useAuthStatus } from '../hooks/useAuthStatus';
+import { toast } from 'react-toastify';
+import ListingOrg from '../components/ListingOrgWithSubcollection';
+import Spinner from '../components/Spinner';
 
 function Orgnisation() {
   const auth = getAuth();
@@ -26,19 +26,20 @@ function Orgnisation() {
   const [loading, setLoading] = useState(false);
   const [loggedIn, setLoggedIn] = useState(false);
   const [orgRefresh, setOrgRefresh] = useState(false);
+  const [orgId, setOrgId] = useState('');
   const [orgAdmins, setOrgAdmins] = useState('');
   const [orgsListing, setOrgsListing] = useState(null);
-  const [orgFormData, setOrgFormData] = useState({
+  const [orgNameData, setOrgNameData] = useState({ 
     orgName: '',
     orgLogo: '',
-    orgAdmin: [],
   });
+  const [orgAdminData, setOrgAdminData] = useState([]);
   const [searchOrgInput, setSearchOrgInput] = useState('');
-  const [orgSearchResult, setOrgSearchResult] = useState([]);
+  const [orgSearchResult, setOrgSearchResult] = useState(null);
   const [clearOrgSearchResult, setClearOrgSearchResult] = useState(false);
 
 
-  const { orgName } = orgFormData;
+  const { orgName } = orgNameData;
   const navigate = useNavigate();
 
 
@@ -107,56 +108,105 @@ function Orgnisation() {
 
   // Create an organisation
   const orgFormNameOnChange = (e) => {
-    setOrgFormData((prevState) => ({
+    setOrgNameData((prevState) => ({
       ...prevState,
       orgName: e.target.value
     }));
-    console.log(`get org name input: ${orgFormData.orgName}`);
+    console.log(`get org name input: ${orgNameData.orgName}`);
   };
 
   const orgFormAdminOnChange = (e) => {
-    setOrgAdmins(e.target.value);
-    console.log(`get org admin input: ${orgAdmins}`);
+    if(e.target.value !== '') {
+      setOrgAdmins(e.target.value);
 
-    const adminArray = orgAdmins.split(',').map((item) => item.trim());
-    adminArray.push(auth.currentUser.email);
+      const adminArray = orgAdmins.split(',').map((item) => item.trim());
+      adminArray.push(auth.currentUser.email);
 
-    setOrgFormData((prevState) => ({
-      ...prevState,
-      orgAdmin: adminArray
-    }));
+      setOrgAdminData(adminArray);
+      console.log(`got admin input: ${orgAdminData[0]}`);
+    };
   };
 
-  // const orgFormMemberOnChange = (e) => {
-  //   setOrgMembers(e.target.value);
-  //   console.log(`get org member input: ${orgAdmins}`);
-
-  //   const memberArray = orgMembers.split(',').map((item) => item.trim());
-  //   memberArray.push(auth.currentUser.email);
-
-  //   setOrgFormData((prevState) => ({
-  //     ...prevState,
-  //     orgMember: memberArray
-  //   }));
-  // };
   
   const orgFormOnSubmit = async (e) => {
     e.preventDefault();
 
     setLoading(true);
-    console.log(`saved in orgFormData orgAdmin array: ${orgFormData.orgAdmin}`);
-    setLoading(true);
-    const docRef = await addDoc(collection(db, 'orgs'), orgFormData);
+    let adminInfo = [{
+      id: auth.currentUser.uid,
+      name: auth.currentUser.displayName,
+      email: auth.currentUser.email,
+      disabled: false,
+    }];
 
-    console.log(`org added with id: ${docRef.id}`);
-    
+    // if there is any admin input
+    if(orgAdminData !== null) {
+      const userRef = collection(db, 'users');
+      setLoading(true);
+      const getAdminInfo = async () => {
+        for (const item of orgAdminData) {
+          const q = query(
+            userRef,
+            where('email', '==', item),
+          );
+          const querySnapShot = await getDocs(q);
+          if(querySnapShot.size !== 0) {
+            console.log(`got admin user record: ${querySnapShot}`);
+            querySnapShot.forEach((doc) => {
+              const data = doc.data();
+              // console.log(`admin name: ${data.name}`);
+              // console.log(`admin email: ${data.email}`);
+              // console.log(`admin disabled: ${data.disabled}`);
+              // console.log(`admin id: ${doc.id}`);
+              adminInfo.push({
+                id: doc.id,
+                name: data.name,
+                email: data.email,
+                disabled: data.disabled,
+              });
+            });
+            console.log(`adminInfo array is filled: ${adminInfo[1].id}`); 
+          } else {
+            toast.error(`Admin must be registered user`, {hideProgressBar: true, autoClose: 3000});
+          };
+        };
+
+      };
+      
+      await getAdminInfo();
+    };
+
+    // create doc in admins subcollection
+    const createSub = async () => {
+      const docRef = await addDoc(collection(db, 'orgs'), orgNameData);
+      console.log(`org added with id: ${docRef}`);
+
+      const subCollectionRef = collection(docRef, 'admins');
+      // an org is a doc, admins is the sub collection name, item.id is the id of doc in the subcollection
+      for(const item of adminInfo) {
+        try {
+          console.log(`item id exist: ${item.id}`);
+          const customId = doc(subCollectionRef, item.id);
+          await setDoc(customId, {
+            name: item.name,
+            email: item.email,
+            disabled: item.disabled
+          });            
+        } catch (error) {
+          console.log(`error creating subcollection: ${error}`);
+        };
+      };
+    };
+
+    createSub();
+
     setOrgRefresh((prevState) => !prevState);
     setLoading(false);
-    setOrgFormData({
+    setOrgNameData({
       orgName: '',
       orgLogo: '',
-      orgAdmin: [],
     });
+
     toast.success('New Organisation Added!', {hideProgressBar: true, autoClose: 3000});
   };
 
@@ -279,6 +329,7 @@ function Orgnisation() {
                   value={searchOrgInput}
                   className='form-control'
                   onChange={searchOrgOnChange}
+                  required
                 />
                 <button type='submit' className="btn btn-block">Search</button>
               </div>

@@ -89,9 +89,10 @@ function User() {
 
     // Search user by name
     const searchUserOnChange = (e) => {
-      setSearchUserInput(e.target.value);
+      const name = e.target.value.trim();
+      setSearchUserInput(name);
       console.log(`get search input: ${searchUserInput}`);
-    }
+    };
 
 
     const searchUserOnSubmit = async (e) => {
