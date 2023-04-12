@@ -25,6 +25,7 @@ function Orgnisation() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [loggedIn, setLoggedIn] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [orgRefresh, setOrgRefresh] = useState(false);
   const [orgAdmins, setOrgAdmins] = useState('');
   const [orgsListing, setOrgsListing] = useState(null);
@@ -48,6 +49,11 @@ function Orgnisation() {
       if(user) {
         setUser(user);
         setLoggedIn(true);
+        user.getIdTokenResult().then(idTokenResult => {
+          if(idTokenResult.claims.admin) {
+            setIsAdmin(true);
+          };
+        });
         console.log(`Current user displayName: ${user.displayName}`);
 
         const showOrgs = async () => {
@@ -313,36 +319,38 @@ function Orgnisation() {
           )               
         }
 
-
-        <p style={{paddingTop: '30px', paddingBottom: '10px', textAlign: 'left', fontWeight: 'bold'}}>Add an Organisation</p>
-        <form onSubmit={orgFormOnSubmit}>
-          <div className='form-group'>
-            <input 
-              type='text'
-              id='orgName'
-              value={orgName}
-              className='form-control'
-              placeholder='Organisation Name'
-              onChange={orgFormNameOnChange}
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <input 
+        {isAdmin && (<>
+          <p style={{paddingTop: '30px', paddingBottom: '10px', textAlign: 'left', fontWeight: 'bold'}}>Add an Organisation</p>
+          <form onSubmit={orgFormOnSubmit}>
+            <div className='form-group'>
+              <input 
                 type='text'
-                id='orgAdmin'
-                name='orgAdmin'
-                onChange={orgFormAdminOnChange}
+                id='orgName'
+                value={orgName}
                 className='form-control'
-                placeholder='Organisation Admin Email'
+                placeholder='Organisation Name'
+                onChange={orgFormNameOnChange}
+                required
               />
-            <p style={{fontStyle: 'italic', fontSize: '12px', textAlign: 'start'}}>Please note: use comma for multiple inputs. Admin must be a registered user. You will be the admin automatically.</p>
-          </div>
-          <div className='form-group'>
-            <button className='btn btn-block'>Add</button>     
-          </div>       
-        </form>
+            </div>
+
+            <div className="form-group">
+              <input 
+                  type='text'
+                  id='orgAdmin'
+                  name='orgAdmin'
+                  onChange={orgFormAdminOnChange}
+                  className='form-control'
+                  placeholder='Organisation Admin Email'
+                />
+              <p style={{fontStyle: 'italic', fontSize: '12px', textAlign: 'start'}}>Please note: use comma for multiple inputs. Admin must be a registered user. You will be the admin automatically.</p>
+            </div>
+            <div className='form-group'>
+              <button className='btn btn-block'>Add</button>     
+            </div>       
+          </form>
+        </>)}
+
 
       </div>
       ) : (

@@ -624,8 +624,7 @@ function Profile() {
               </form>
               <div 
                 onClick={() => {
-                  updateClick && 
-                  profileFormOnSubmit() &&
+                  updateClick && profileFormOnSubmit()
                   setUpdateClick((prevState) => !prevState)
                 }} 
                 className='btn btn-reverse' 

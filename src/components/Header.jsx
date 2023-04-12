@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { FaSignInAlt, FaSignOutAlt, FaUser, FaHome, FaUserPlus, FaBuilding } from 'react-icons/fa';
+import { MdPeople } from 'react-icons/md'
 import { Link, useNavigate } from 'react-router-dom';
 import { auth } from '../firebase.config';
 import vhq_logo from '../assets/jpg/vhq_logo.jpg';
@@ -9,6 +10,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 function Header() {
   // const { loggedIn, checkingStatus } = useAuthStatus();
   const [loggedIn, setLoggedIn] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [userProfileUrl, setUserProfileUrl] = useState('');
   const navigate = useNavigate();
 
@@ -18,6 +20,12 @@ function Header() {
     onAuthStateChanged(auth, (user) => {
       if(user) {
         setLoggedIn(true);
+        user.getIdTokenResult().then(idTokenResult => {
+          if(idTokenResult.claims.admin) {
+            setIsAdmin(true);
+          };
+        });
+        console.log(`user displayName: ${user.displayName}`);
         console.log(`header user ${user.uid}`);
         const params = new URLSearchParams({
           q: user.uid
@@ -33,6 +41,7 @@ function Header() {
 
   const onLogout = () => {
     setLoggedIn(false);
+    setIsAdmin(false);
     auth.signOut();
     navigate('/');
   };
@@ -52,11 +61,13 @@ function Header() {
                 <FaHome />Home
               </Link>
             </li>
-            <li>
-              <Link to='/users'>
-                <FaBuilding />Users
-              </Link>
-            </li>
+            {isAdmin && (
+              <li>
+                <Link to='/users'>
+                  <MdPeople />Users
+                </Link>
+              </li>
+            )}
             <li>
               <Link to='/orgs'>
                 <FaBuilding />Orgnisation

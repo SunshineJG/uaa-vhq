@@ -28,7 +28,7 @@ function User() {
   const [loggedIn, setLoggedIn] = useState(false);
   // const [userRefresh, setUserRefresh] = useState(false);
   const [adminEmail, setAdminEmail] = useState('');
-  // const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [searchUserInput, setSearchUserInput] = useState('');
   const [userSearchResult, setUserSearchResult] = useState([]);
   const [clearUserSearchResult, setClearUserSearchResult] = useState(false);
@@ -45,6 +45,11 @@ function User() {
       if(user) {
         setUser(user);
         setLoggedIn(true);
+        user.getIdTokenResult().then(idTokenResult => {
+          if(idTokenResult.claims.admin) {
+            setIsAdmin(true);
+          };
+        });
         console.log(`Current user displayName: ${user.displayName}`);
 
         const showUsers = async () => {     
@@ -238,7 +243,7 @@ function User() {
   if(loading) { return <Spinner />};
 
   return <>
-    {loggedIn ? (
+    {isAdmin ? (
       <div className='container'>
         <header className='heading' style={{marginTop: '50px'}}>User Management</header>
         <div>
@@ -319,7 +324,7 @@ function User() {
       </div>
       ) : (
         <div className='container'>
-          <header className="heading">Please Login</header>
+          <header className="heading">Access denied. You are not an admin.</header>
         </div>
       )}
     </>

@@ -6,6 +6,7 @@ import { db, auth } from '../firebase.config'
 import { toast } from 'react-toastify'
 import { FaUser } from 'react-icons/fa'
 import { useAuthStatus } from '../hooks/useAuthStatus'
+import OAuth from '../components/OAuth'
 
 function Register() {
   const { loggedIn } = useAuthStatus();
@@ -62,6 +63,7 @@ function Register() {
             timestamp: serverTimestamp()
           };
 
+          delete userData.password;
           delete userData.password2;
 
           await setDoc(doc(db, 'users', user.uid), userData);
@@ -148,6 +150,10 @@ function Register() {
                   <button className='btn btn-block'>Submit</button>
                 </div>
               </form>
+
+              <div>
+                <OAuth />
+              </div>
             </section>
       </> )
     }

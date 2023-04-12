@@ -5,6 +5,7 @@ import { auth, db } from '../firebase.config'
 import { toast } from 'react-toastify'
 import { FaSignInAlt } from 'react-icons/fa'
 import { useAuthStatus } from '../hooks/useAuthStatus'
+import OAuth from '../components/OAuth'
 
 function Login() {
   const { loggedIn } = useAuthStatus();
@@ -91,6 +92,10 @@ function Login() {
 
             <div className="form-group">
                 <Link to='/forgot-password' className='btn btn-block'>Forgot Password</Link>
+            </div>
+
+            <div>
+              <OAuth />
             </div>
           </section>
         </>)
