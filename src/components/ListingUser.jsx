@@ -3,7 +3,7 @@ import { FaUnlock, FaLock, FaEye } from 'react-icons/fa';
 import vhq_logo from '../assets/jpg/vhq_logo.jpg';
 
 
-function ListingUser({ userData, id, onDisable, onEnable, onView }) {
+function Listinguser({ userData, id, onDisable, onEnable, onView }) {
 
   return (
     <div>
@@ -28,4 +28,4 @@ function ListingUser({ userData, id, onDisable, onEnable, onView }) {
   )
 }
 
-export default ListingUser
+export default Listinguser

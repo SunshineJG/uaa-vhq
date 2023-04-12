@@ -5,7 +5,7 @@ import { getDoc, doc } from 'firebase/firestore'
 import { db } from '../firebase.config'
 import Spinner from '../components/Spinner'
 
-function OrgDetails() {
+function Orginfo() {
   const auth = getAuth();
   const [loading, setLoading] = useState(true);
   const [orgExist, setOrgExist] = useState(false);
@@ -104,4 +104,4 @@ function OrgDetails() {
   )
 }
 
-export default OrgDetails
+export default Orginfo

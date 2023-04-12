@@ -7,9 +7,9 @@ import Login from './pages/Login'
 import Profile from './pages/Profile'
 import ForgotPassword from './pages/ForgotPassword'
 import Orgnisation from './pages/Orgnisation'
-import Orgdetails from './pages/OrgDetails'
+import Orginfo from './pages/Orginfo'
 import User from './pages/User'
-import Userdetails from './pages/UserDetails'
+import Userinfo from './pages/Userinfo'
 import Header from './components/Header'
 
 
@@ -26,9 +26,9 @@ function App() {
           <Route path='/profile/:userId' element={<Profile />} />
           <Route path='/forgot-password' element={<ForgotPassword />} />
           <Route path='/orgs' element={<Orgnisation />} />
-          <Route path='/orgs/:orgId' element={<Orgdetails />} />
+          <Route path='/orgs/:orgId' element={<Orginfo />} />
           <Route path='/users' element={<User />} />
-          <Route path='/users/:userId' element={<Userdetails />} />
+          <Route path='/users/:userId' element={<Userinfo />} />
         </Routes>
       </div>
     </Router>
