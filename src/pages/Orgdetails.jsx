@@ -6,7 +6,7 @@ import { db } from '../firebase.config'
 import Spinner from '../components/Spinner'
 
 function OrgDetails() {
-  const auth = getAuth();
+  // const auth = getAuth();
   const [loading, setLoading] = useState(true);
   const [orgExist, setOrgExist] = useState(false);
   const [updateClick, setUpdateClick] = useState(false);

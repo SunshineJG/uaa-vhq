@@ -43,6 +43,7 @@ function Profile() {
   const [updateClick, setUpdateClick] = useState(false);
   const { name, email, avatar } = formData;
 
+  
   // For User Management
   // const [adminEmail, setAdminEmail] = useState('');
   // const [isAdmin, setIsAdmin] = useState(false);

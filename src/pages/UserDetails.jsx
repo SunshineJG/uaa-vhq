@@ -3,7 +3,7 @@ import React from 'react'
 function UserDetails() {
   return (
     <div>
-      hello
+      User
     </div>
   )
 }

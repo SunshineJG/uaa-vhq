@@ -38,11 +38,11 @@ function Orgnisation() {
   const [orgSearchResult, setOrgSearchResult] = useState(null);
   const [clearOrgSearchResult, setClearOrgSearchResult] = useState(false);
 
-
   const { orgName } = orgNameData;
   const navigate = useNavigate();
 
 
+  
   useEffect(() => {
     // check if logged in
     onAuthStateChanged(auth, (user) => {
