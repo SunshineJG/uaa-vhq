@@ -1,5 +1,5 @@
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { FaEdit, FaEye, FaTrash} from 'react-icons/fa';
+import { FaEdit, FaEye, FaTrash } from 'react-icons/fa';
 import vhq_logo from '../assets/jpg/vhq_logo.jpg';
 
 function ListingOrg({orgData, id, onView, onDelete }) {
