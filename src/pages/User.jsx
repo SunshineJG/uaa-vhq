@@ -18,7 +18,7 @@ import { getAuth, onAuthStateChanged, getIdTokenResult, updateProfile } from 'fi
 import { httpsCallable } from 'firebase/functions'
 // import { useAuthStatus } from '../hooks/useAuthStatus'
 import { toast } from 'react-toastify'
-import ListingUser from '../components/ListingUser'
+import Listinguser from '../components/Listinguser'
 import Spinner from '../components/Spinner'
 
 function User() {
@@ -250,7 +250,7 @@ function User() {
           {!hideUsersListing && (
             <ul>
               {usersListing.map((userItem) => (
-                  <ListingUser 
+                  <Listinguser 
                   userData={userItem.data} 
                   id={userItem.id} 
                   key={userItem.id}
@@ -284,7 +284,7 @@ function User() {
           <div>
             <ul>
               {userSearchResult.map((userItem) => (
-                <ListingUser
+                <Listinguser
                   userData={userItem.data}
                   id={userItem.id}
                   key={userItem.id}
