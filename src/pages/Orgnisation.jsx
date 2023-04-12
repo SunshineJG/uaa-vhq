@@ -17,7 +17,7 @@ import {
 import { getAuth, onAuthStateChanged, getIdTokenResult, updateProfile } from 'firebase/auth'
 // import { useAuthStatus } from '../hooks/useAuthStatus'
 import { toast } from 'react-toastify'
-import ListingOrg from '../components/ListingOrg'
+import ListingOrg from '../components/Listingorg'
 import Spinner from '../components/Spinner'
 
 function Orgnisation() {

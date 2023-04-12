@@ -19,7 +19,7 @@ import { httpsCallable } from 'firebase/functions'
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage'
 // import { useAuthStatus } from '../hooks/useAuthStatus'
 import { toast } from 'react-toastify'
-import ListingUser from '../components/ListingUser'
+import ListingUser from '../components/Listinguser'
 import ListingOrg from '../components/ListingOrgWithSubcollection'
 import Spinner from '../components/Spinner'
 
